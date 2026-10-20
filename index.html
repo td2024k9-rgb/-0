@@ -1,0 +1,71 @@
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Пульт — секретный объект</title>
+<style>
+:root{color-scheme:dark;--red:#ff2438;--dim:#728080;--green:#77ffb0}
+*{box-sizing:border-box}
+body{margin:0;min-height:100vh;background:radial-gradient(ellipse at 50% 42%,#182124 0,#090d0f 58%,#030506 100%);color:#eaf0ee;font-family:ui-monospace,SFMono-Regular,Consolas,monospace;display:grid;place-items:center;padding:24px}
+.panel{width:min(900px,100%);border:1px solid #344044;background:#0a1012eF;box-shadow:0 0 70px #000b,inset 0 0 35px #ffffff05;padding:clamp(20px,5vw,46px);position:relative}
+.panel:before,.panel:after{content:"";position:absolute;width:18px;height:18px;border-color:#758184;border-style:solid}
+.panel:before{top:9px;left:9px;border-width:1px 0 0 1px}.panel:after{right:9px;bottom:9px;border-width:0 1px 1px 0}
+.top{display:flex;justify-content:space-between;gap:12px;flex-wrap:wrap;border-bottom:1px solid #293336;padding-bottom:18px;color:#9aa9aa;font-size:12px;letter-spacing:.12em}
+.live{color:var(--green)}.dot{display:inline-block;width:7px;height:7px;background:var(--green);border-radius:50%;margin-right:8px;box-shadow:0 0 10px var(--green)}
+h1{text-align:center;font-size:clamp(22px,4vw,34px);letter-spacing:.14em;margin:32px 0 8px}
+.sub{text-align:center;color:#829092;font-size:12px;letter-spacing:.18em}
+.readouts{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin:30px 0}
+.readout{border:1px solid #293437;padding:13px;text-align:center;background:#ffffff03}
+.label{font-size:10px;color:#7f8d8f;letter-spacing:.12em}.value{font-size:15px;margin-top:8px;color:#d8e0df}
+.action-area{display:grid;place-items:center;padding:14px 0 22px}
+button{font:inherit;cursor:pointer}
+.big-button{width:min(320px,78vw);aspect-ratio:1;border-radius:50%;border:9px solid #6f111b;background:radial-gradient(circle at 35% 27%,#ff5b65,#e20d24 55%,#8e0614);box-shadow:0 0 0 4px #21080c,0 12px 0 #450710,0 0 42px #ff1a3038,inset 0 4px 12px #ffffff50,inset 0 -12px 22px #5a000c;display:flex;flex-direction:column;align-items:center;justify-content:center;color:white;text-shadow:0 2px 5px #61000b;transition:transform .12s,filter .12s}
+.big-button:hover{filter:brightness(1.12)}.big-button:active{transform:translateY(7px);box-shadow:0 0 0 4px #21080c,0 4px 0 #450710,inset 0 4px 12px #ffffff30}
+.big-button .symbol{font-size:32px;margin-bottom:12px}.big-button strong{font-size:clamp(19px,4vw,26px);letter-spacing:.08em}.big-button small{font-size:10px;margin-top:10px;letter-spacing:.16em}
+.warning{text-align:center;color:#ff6875;font-size:11px;letter-spacing:.08em;margin-top:14px}
+.status{min-height:65px;border:1px solid #293437;background:#05090a;padding:15px;text-align:center;display:grid;place-items:center;color:#a7b2b2;font-size:13px}
+.status strong{color:var(--green);font-weight:600}
+.log{margin-top:20px;color:#647273;font-size:11px;line-height:1.9}.log div:before{content:"> ";color:#d43a49}
+footer{display:flex;justify-content:space-between;gap:12px;flex-wrap:wrap;margin-top:24px;padding-top:15px;border-top:1px solid #293336;color:#596667;font-size:10px}
+@media(max-width:520px){.readouts{grid-template-columns:1fr}.readout{display:flex;justify-content:space-between;align-items:center}.value{margin:0}}
+</style>
+</head>
+<body>
+<main class="panel">
+  <div class="top"><span>ОБЪЕКТ 0X-7 / КОНТРОЛЬНЫЙ ПУЛЬТ</span><span class="live"><i class="dot"></i>СИСТЕМА В СЕТИ</span></div>
+  <h1>СТРАТЕГИЧЕСКАЯ СИСТЕМА</h1>
+  <div class="sub">АВТОНОМНЫЙ РЕЖИМ · УРОВЕНЬ ДОСТУПА: КРИТИЧЕСКИЙ</div>
+  <div class="readouts">
+    <div class="readout"><span class="label">РЕАКТОР</span><span class="value">СТАБИЛЕН</span></div>
+    <div class="readout"><span class="label">СИГНАЛ</span><span class="value">ЗАЩИЩЁН</span></div>
+    <div class="readout"><span class="label">РЕЖИМ</span><span class="value">СИМУЛЯЦИЯ</span></div>
+  </div>
+  <div class="action-area">
+    <button class="big-button" id="launch" aria-label="Запустить шуточную симуляцию">
+      <span class="symbol">☢</span><strong>ЗАПУСТИТЬ</strong><small>НАЖМИ ДЛЯ СИМУЛЯЦИИ</small>
+    </button>
+    <div class="warning">⚠ ВНИМАНИЕ: КНОПКА ЗАПУСКАЕТ ТОЛЬКО АНИМАЦИЮ ⚠</div>
+  </div>
+  <div class="status" id="status" aria-live="polite">ОЖИДАНИЕ КОМАНДЫ ОПЕРАТОРА…</div>
+  <div class="log" id="log"><div>Контур безопасности активен.</div><div>Внешние системы отключены.</div><div>Ожидание подтверждения симуляции.</div></div>
+  <footer><span>SECURE CONSOLE // DEMO BUILD 1.0</span><span>РЕАЛЬНОГО ЗАПУСКА НЕТ</span></footer>
+</main>
+<script>
+const button=document.getElementById('launch'),status=document.getElementById('status'),log=document.getElementById('log');
+let running=false;
+button.addEventListener('click',()=>{
+ if(running)return;
+ running=true;button.disabled=true;button.style.filter='grayscale(.25)';
+ const lines=['Проверка воображаемых систем…','Условный ключ принят.','Запуск обратного отсчёта…','3…','2…','1…','СИМУЛЯЦИЯ ЗАВЕРШЕНА — МИР НЕ ПОСТРАДАЛ.'];
+ let i=0;status.textContent=lines[0];
+ const tick=()=>{
+   i++;
+   if(i<lines.length){status.textContent=lines[i];const row=document.createElement('div');row.textContent=lines[i];log.appendChild(row);setTimeout(tick, i>=3&&i<=5?850:650);}
+   else{status.innerHTML='<strong>✓ УСПЕШНО: ЭТО БЫЛА ТОЛЬКО ШУТОЧНАЯ СИМУЛЯЦИЯ</strong>';button.disabled=false;button.style.filter='';button.querySelector('strong').textContent='ЕЩЁ РАЗ';button.querySelector('small').textContent='СИМУЛЯЦИЯ ЗАВЕРШЕНА';running=false;}
+ };
+ setTimeout(tick,650);
+});
+</script>
+</body>
+</html>
